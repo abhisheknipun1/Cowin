@@ -1,6 +1,5 @@
 import requests
-import json
-
+import datetime
 
 # NB. Original query string below. It seems impossible to parse and
 # reproduce query strings 100% accurately so the one below is given
@@ -10,29 +9,48 @@ import json
 headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
-params = (
-    ('district_id', '97'),
-    ('date', '24-05-2021'),
-)
-
-response = requests.get(
-    'https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict', headers=headers, params=params)
-resp = response.json()
-
-# debug
-# print(type(resp))
-# print(resp)
+# To find the district codes - https://cdn-api.co-vin.in/api/v2/admin/location/districts/{1-40}
+# {1-40} - This is state and union territory codes (1 to 40)
 
 
-def vaccine_available_for_min_18_years_old():
-    count = 0
+def vaccine_availabily_for_5_days():
+    districtid = [97,86,95]
+    current_date = datetime.date.today()
+    for dist in districtid:
+        parameter(current_date.strftime("%d-%m-%Y"),dist)
+    for i in (1,2,3,4):
+        newdate = current_date + datetime.timedelta(days=i)
+        for dist in districtid:
+            parameter(newdate.strftime("%d-%m-%Y"),dist)
+
+
+def parameter(current_date,districtid):
+    params = (
+        ('district_id', districtid),
+        ('date', current_date),
+    )
+    response(params)
+
+
+def response(params):
+    resp = requests.get(
+        'https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict', headers=headers, params=params)
+    resp = resp.json()
+    # debug
+    #print(type(resp))
+    #print(resp)
+    vaccine_available_for_min_18_years_old(resp)
+    #vaccine_available_for_min_45_years_old(resp)
+
+
+
+def vaccine_available_for_min_18_years_old(resp):
     for data in resp["sessions"]:
-        count = count + 1
-        if count == 1:
-            print(data["district_name"])
         if data["min_age_limit"] == 18:
             if data["available_capacity_dose1"] > 0 or data["available_capacity_dose2"] > 0:
                 print()
+                print("district_name = {}".format(data["district_name"]))
+                print("date = {}".format(data["date"]))
                 print("min_age_limit = {}".format(data["min_age_limit"]))
                 print("Centre name = {}".format(data["name"]))
                 print("block_name = {}".format(data["block_name"]))
@@ -43,15 +61,13 @@ def vaccine_available_for_min_18_years_old():
                 print("available_capacity_dose2 = {}".format(data["available_capacity_dose2"]))
 
 
-def vaccine_available_for_min_45_years_old():
-    count = 0
+def vaccine_available_for_min_45_years_old(resp):
     for data in resp["sessions"]:
-        count = count + 1
-        if count == 1:
-            print(data["district_name"])
         if data["min_age_limit"] == 45:
             if data["available_capacity_dose1"] > 0 or data["available_capacity_dose2"] > 0:
                 print()
+                print("district_name = {}".format(data["district_name"]))
+                print("date = {}".format(data["date"]))
                 print("min_age_limit = {}".format(data["min_age_limit"]))
                 print("Centre name = {}".format(data["name"]))
                 print("block_name = {}".format(data["block_name"]))
@@ -62,5 +78,5 @@ def vaccine_available_for_min_45_years_old():
                 print("available_capacity_dose2 = {}".format(data["available_capacity_dose2"]))
 
 
-vaccine_available_for_min_18_years_old()
-#vaccine_available_for_min_45_years_old()
+
+vaccine_availabily_for_5_days()
